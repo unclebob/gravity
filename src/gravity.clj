@@ -1,14 +1,21 @@
 (ns gravity
   (:require [quil.core :as q]
             [quil.middleware :as m]
+            [vectors :as v]
             [world]))
 
+(def SCREEN [1500 1000])
+(def CENTER_OFFSET (atom [(/ (first SCREEN) 2)
+                          (/ (second SCREEN) 2)]))
+
 (defn setup []
-  (q/frame-rate 60)
+  (q/frame-rate 30)
   (q/color-mode :rgb)
   (world/make))
 
 (defn update-state [world]
+  (when (q/mouse-pressed?)
+    (reset! CENTER_OFFSET [(q/mouse-x) (q/mouse-y)]))
   (world/update world))
 
 (defn draw-world [world]
@@ -18,24 +25,33 @@
           [x y] (:position o)
           diameter (condp >= (:mass o)
                      1 3
-                     2 5
-                     10 10
-                     30)]
-      (q/ellipse (+ x 500) (+ y 500) diameter diameter)
+                     5 5
+                     10 8
+                     20 12
+                     600 15
+                     30)
+          color (condp <= (:mass o)
+                  100 [255 255 0]
+                  [0 255 0])]
+      (apply q/fill color)
+      (q/ellipse (+ x (first @CENTER_OFFSET))
+                 (+ y (second @CENTER_OFFSET))
+                 diameter diameter)
       (recur (rest world)))))
 
 (defn draw-state [world]
   (q/background 240)
-  (let [message (apply str (map #(prn-str (:name %) (map int (:position %))) world))]
+  (let [messages (map #(prn-str (:name %) (int (v/magnitude (:position %)))) world)]
     (q/fill 0 0 0)
-    (q/text message 10 10))
+    (q/text (apply str messages) 10 10))
+
   (q/fill 0 255 0)
   (draw-world world))
 
 
 (q/defsketch gravity
   :title "Gravity"
-  :size [1000 1000]
+  :size SCREEN
   :setup setup
   :update update-state
   :draw draw-state

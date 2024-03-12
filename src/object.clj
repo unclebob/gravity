@@ -17,13 +17,10 @@
       (v/scale force-direction force-magnitude))))
 
 (defn sum-forces [world object]
-  (loop [world world
-         force [0 0]]
-    (if (empty? world)
-      (assoc object :force force)
-      (let [f (force-between object (first world))
-            new-force (v/add force f)]
-        (recur (rest world) new-force)))))
+  (->> world
+       (map #(force-between object %))
+       (reduce v/add [0 0])
+       (assoc object :force)))
 
 (defn accelerate [{:keys [mass force velocity] :as o}]
   (let [acceleration (v/scale force (/ -1 mass))]
